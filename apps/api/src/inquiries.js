@@ -1,43 +1,16 @@
 import { Router } from "express";
 import { query } from "./db.js";
 import { requireAuth } from "./security.js";
+import { canTransitionStatus, hasAllowedStatus, isValidExpectedVersion, isValidInquiryId, validateInquiry } from "./inquiry-rules.js";
 
 export const inquiriesRouter = Router();
-const statuses = new Set(["New", "In Progress", "Resolved"]);
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const fields = [
-  ["customerName", "customer_name", 120],
-  ["contact", "contact", 200],
-  ["subject", "subject", 160],
-  ["description", "description", 2000],
-];
 
 inquiriesRouter.use(requireAuth);
-
-function validateInquiry(body) {
-  if (!body || typeof body !== "object" || Array.isArray(body)) return { error: "Request body must be a JSON object." };
-  const values = {};
-  for (const [key, _column, maxLength] of fields) {
-    if (typeof body[key] !== "string" || !body[key].trim()) return { error: `${key} is required.` };
-    values[key] = body[key].trim();
-    if (values[key].length > maxLength) return { error: `${key} must be ${maxLength} characters or fewer.` };
-  }
-  return { values };
-}
-
-function isUuid(value) {
-  return uuidPattern.test(value);
-}
-
-function validateExpectedVersion(value) {
-  if (typeof value !== "string" || Number.isNaN(Date.parse(value))) return false;
-  return true;
-}
 
 inquiriesRouter.get("/", async (request, response, next) => {
   const { search = "", status = "" } = request.query;
   if (typeof search !== "string" || search.length > 200) return response.status(400).json({ error: "Search must be 200 characters or fewer." });
-  if (typeof status !== "string" || (status && !statuses.has(status))) return response.status(400).json({ error: "Status filter is invalid." });
+  if (typeof status !== "string" || (status && !hasAllowedStatus(status))) return response.status(400).json({ error: "Status filter is invalid." });
 
   try {
     const { rows } = await query(
@@ -74,7 +47,7 @@ inquiriesRouter.post("/", async (request, response, next) => {
 });
 
 inquiriesRouter.get("/:id", async (request, response, next) => {
-  if (!isUuid(request.params.id)) return response.status(400).json({ error: "Inquiry ID must be a valid UUID." });
+  if (!isValidInquiryId(request.params.id)) return response.status(400).json({ error: "Inquiry ID must be a valid UUID." });
   try {
     const { rows } = await query(
       `SELECT i.id, i.customer_name AS "customerName", i.contact, i.subject, i.description,
@@ -92,10 +65,10 @@ inquiriesRouter.get("/:id", async (request, response, next) => {
 
 inquiriesRouter.patch("/:id/status", async (request, response, next) => {
   const { id } = request.params;
-  if (!isUuid(id)) return response.status(400).json({ error: "Inquiry ID must be a valid UUID." });
+  if (!isValidInquiryId(id)) return response.status(400).json({ error: "Inquiry ID must be a valid UUID." });
   const { status, expectedUpdatedAt } = request.body ?? {};
-  if (!statuses.has(status)) return response.status(400).json({ error: "Status must be New, In Progress, or Resolved." });
-  if (!validateExpectedVersion(expectedUpdatedAt)) return response.status(400).json({ error: "expectedUpdatedAt must be a valid timestamp from the inquiry you viewed." });
+  if (!hasAllowedStatus(status)) return response.status(400).json({ error: "Status must be New, In Progress, or Resolved." });
+  if (!isValidExpectedVersion(expectedUpdatedAt)) return response.status(400).json({ error: "expectedUpdatedAt must be a valid timestamp from the inquiry you viewed." });
 
   try {
     const currentResult = await query("SELECT status, updated_at AS \"updatedAt\" FROM inquiries WHERE id = $1", [id]);
@@ -104,12 +77,7 @@ inquiriesRouter.patch("/:id/status", async (request, response, next) => {
     if (new Date(current.updatedAt).getTime() !== Date.parse(expectedUpdatedAt)) {
       return response.status(409).json({ error: "This inquiry changed after you opened it. Refresh to see the latest status.", currentStatus: current.status, updatedAt: current.updatedAt });
     }
-    const allowed = {
-      New: ["In Progress"],
-      "In Progress": ["Resolved"],
-      Resolved: ["In Progress"],
-    };
-    if (!allowed[current.status].includes(status)) {
+    if (!canTransitionStatus(current.status, status)) {
       return response.status(409).json({ error: `Cannot change status from ${current.status} to ${status}.`, currentStatus: current.status });
     }
 

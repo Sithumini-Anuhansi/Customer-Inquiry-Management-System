@@ -31,4 +31,8 @@ The project uses a client–server architecture in a single repository. The Next
 
 The API provides `POST /api/auth/login`, `POST /api/auth/logout`, and `GET /api/auth/me` for session-based sign-in. Inquiry routes under `/api/inquiries` require the HTTP-only session cookie. The API validates inquiry input and status changes, and uses the inquiry `updatedAt` value to reject stale updates with `409 Conflict`.
 
+## Tests
+
+Run both test suites from the repository root with `npm test`. The backend tests cover inquiry validation, UUID validation, and allowed status transitions. The frontend test covers showing a server validation error while preserving the user’s entered form values. The suites do not yet cover authenticated HTTP/database integration, session expiry, or full browser journeys.
+
 The local database credentials are for development only. Seed credentials are read from `.env`; do not commit that file or reuse these credentials outside local development.

@@ -90,6 +90,7 @@ function NewInquiryForm({ onCreated, onCancel }) {
         <div>
           <p className="eyebrow">CAPTURE A REQUEST</p>
           <h2 id="new-inquiry-title">New inquiry</h2>
+          <p className="muted form-guidance">Repeat requests can be tracked separately. Search existing inquiries first if you want to check what is already recorded.</p>
         </div>
         <button className="icon-button" type="button" aria-label="Close new inquiry form" onClick={onCancel}>×</button>
       </div>

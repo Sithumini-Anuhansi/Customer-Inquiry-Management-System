@@ -12,7 +12,7 @@ This is an internal workspace for a small service team. Any authenticated staff 
 
 ## Stale records and trade-off
 
-The overview and detail view should fetch the current server record when opened. Updates should include the version the user last saw (for example, `updated_at`); if another tab has changed the record, the API returns `409 Conflict` and the UI asks the user to refresh before trying again. This adds a small amount of request and UI handling but avoids silently overwriting another staff member’s update. Real-time synchronization is outside this assessment’s scope.
+The overview and detail view fetch the current server record when opened. Updates include the `updated_at` version the user last saw; if another tab has changed the record, the API returns `409 Conflict` and the UI reloads the latest version and explains the conflict before the user tries again. This adds a small amount of request and UI handling but avoids silently overwriting another staff member’s update. Real-time synchronization is outside this assessment’s scope.
 
 ## AI assistance
 

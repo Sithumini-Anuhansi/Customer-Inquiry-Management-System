@@ -76,6 +76,33 @@ npm run build
 
 The current tests are focused unit/component tests. Gaps include authenticated HTTP/database integration tests, session expiry tests, and full browser automation; those should be added next.
 
+## Application screenshots
+
+Place application screenshots in `docs/screenshots/` and embed them here when available. Suggested captures:
+
+- `overview.png` — signed-in dashboard with inquiry statistics and seeded records.
+- `inquiry-details.png` — an inquiry ID, details, current status, and status history.
+- `create-inquiry.png` — the completed new-inquiry form or the newly created record in the overview.
+
+No application evidence screenshots are included in this repository yet.
+
+## Demo video
+
+Save or link a 3–5 minute end-to-end walkthrough here when it is recorded. It should show staff sign-in, the overview, creating and finding an inquiry, opening its details, changing status, and one validation or stale-update failure case. Briefly explain API-side authentication/validation and the client–server design choice. Do not show the `.env` file or its contents.
+
+Suggested local file: `docs/demo/inquitrack-demo.mp4`. If the video is hosted elsewhere, add its shareable URL here. No demo video is included yet.
+
+## Test screenshots
+
+Place test evidence in `docs/test-evidence/`. Useful captures include:
+
+- `automated-tests.png` — terminal output after `npm test` completes successfully.
+- `api-unauthenticated.png` — the `401 Unauthorized` response from `curl.exe -i http://localhost:4000/api/inquiries` when signed out.
+- `validation-feedback.png` — the application displaying the server validation error while preserving the form values.
+- `stale-update.png` — the conflict feedback after one browser tab changes an inquiry while another tab still has the older version.
+
+Screenshots supplement the test suites; they do not replace running the test commands above. No test evidence screenshots are included yet.
+
 ## API overview
 
 - Authentication: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`

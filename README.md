@@ -2,6 +2,8 @@
 
 A small full-stack application for staff to record, find, and manage customer inquiries.
 
+The workspace supports staff sign-in, inquiry creation, search and status filtering, and controlled status updates. API-side validation and authentication are required for every inquiry operation.
+
 ## Stack
 
 - Frontend: Next.js and React (`apps/web`)

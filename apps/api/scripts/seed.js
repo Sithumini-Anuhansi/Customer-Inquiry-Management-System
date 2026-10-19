@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { pool } from "../src/db.js";
 import { seedStaffAccount } from "../src/auth.js";
 

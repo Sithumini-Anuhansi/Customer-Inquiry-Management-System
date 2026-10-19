@@ -1,6 +1,8 @@
+import "./globals.css";
+
 export const metadata = {
-  title: "Inquiry Desk",
-  description: "Customer inquiry management for your team",
+  title: "Inquiry Desk | Coffee Ninja",
+  description: "A clear, reliable workspace for customer requests.",
 };
 
 export default function RootLayout({ children }) {

@@ -45,11 +45,21 @@ The seeded inquiry script creates or refreshes four examples with different inqu
 
 ## Tests and build
 
-Run both focused test suites:
+Run both test suites from the repository root:
 
 ```sh
 npm test
 ```
+
+The backend suite (`apps/api/test/inquiry-rules.test.js`) contains these tests:
+
+- `inquiry validation rejects missing fields and trims accepted values` — required fields are rejected and accepted values are trimmed.
+- `status transitions permit the lifecycle and reopening, but reject skipped steps` — valid lifecycle changes and reopening are allowed; skipped transitions are rejected.
+- `inquiry IDs must be valid UUIDs before they reach PostgreSQL` — malformed IDs are identified before database access.
+
+The frontend suite (`apps/web/test/new-inquiry-form.test.jsx`) contains this test:
+
+- `shows a server validation error and leaves the form available to correct` — the form displays an API validation error and preserves entered values so the user can correct them.
 
 Run either suite separately:
 
@@ -64,22 +74,7 @@ Build the frontend for production:
 npm run build
 ```
 
-The backend tests cover inquiry input validation, malformed IDs, and allowed status transitions. The frontend test covers showing a server validation error while preserving entered form values. Current gaps include authenticated HTTP/database integration tests, session expiry tests, and full browser automation; those should be added next.
-
-## Assessment demonstration recording
-
-Record a 3–5 minute walkthrough. A suggested flow and evidence checklist are included below:
-
-1. Start the local app and show the sign-in page. Sign in with the local demo account; do not show the `.env` file.
-2. Show the inquiry overview, status statistics, search, seeded dates, and seeded status history.
-3. Create an inquiry with valid customer/contact/subject/description values, save it, and show it in the list.
-4. Search for it by its `INQ-ID-...` ID or customer name. Open the detail page and show its ID, inquiry date, and status history.
-5. Change its status and show the updated status/date. Briefly show a seeded resolved or in-progress inquiry and explain that resolved inquiries may be reopened.
-6. Demonstrate one failure: omit a required field and show the form/API validation feedback. Explain that validation also runs on the API.
-7. Explain that inquiry APIs require a valid signed-in session and that a stale update returns `409 Conflict` with a reload/review message rather than silently overwriting newer data.
-8. Close by explaining the client–server architecture choice and one trade-off or next improvement.
-
-For screenshots, capture the signed-in overview with seeded data, the successful new inquiry in the list, the inquiry detail/history view, and the validation or stale-update feedback. Avoid capturing passwords or `.env` contents.
+The current tests are focused unit/component tests. Gaps include authenticated HTTP/database integration tests, session expiry tests, and full browser automation; those should be added next.
 
 ## API overview
 

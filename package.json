@@ -6,7 +6,12 @@
     "dev": "concurrently -k -n api,web -c blue,green \"npm run dev --workspace=@inquiry/api\" \"npm run dev --workspace=@inquiry/web\"",
     "dev:api": "npm run dev --workspace=@inquiry/api",
     "dev:web": "npm run dev --workspace=@inquiry/web",
+    "db:migrate": "npm run db:migrate --workspace=@inquiry/api",
+    "db:seed": "npm run db:seed --workspace=@inquiry/api",
     "build": "npm run build --workspace=@inquiry/web"
+  },
+  "overrides": {
+    "postcss": "^8.5.23"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

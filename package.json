@@ -8,6 +8,7 @@
     "dev:web": "npm run dev --workspace=@inquiry/web",
     "db:migrate": "npm run db:migrate --workspace=@inquiry/api",
     "db:seed": "npm run db:seed --workspace=@inquiry/api",
+    "db:seed:inquiries": "npm run db:seed:inquiries --workspace=@inquiry/api",
     "build": "npm run build --workspace=@inquiry/web",
     "test": "npm run test --workspace=@inquiry/api && npm run test --workspace=@inquiry/web"
   },

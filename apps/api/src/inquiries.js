@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { query } from "./db.js";
+import { pool, query } from "./db.js";
 import { requireAuth } from "./security.js";
 import { canTransitionStatus, hasAllowedStatus, isValidExpectedVersion, isValidInquiryId, validateInquiry } from "./inquiry-rules.js";
 
@@ -14,12 +14,13 @@ inquiriesRouter.get("/", async (request, response, next) => {
 
   try {
     const { rows } = await query(
-      `SELECT i.id, i.customer_name AS "customerName", i.contact, i.subject, i.description,
+      `SELECT i.id, 'INQ-ID-' || lpad(i.display_number::text, greatest(3, length(i.display_number::text)), '0') AS "displayId",
+              i.customer_name AS "customerName", i.contact, i.subject, i.description,
               i.status, i.created_at AS "createdAt", i.updated_at AS "updatedAt",
               u.display_name AS "createdBy"
        FROM inquiries i JOIN staff_users u ON u.id = i.created_by
        WHERE ($1 = '' OR i.status = $1)
-         AND ($2 = '' OR concat_ws(' ', i.customer_name, i.contact, i.subject, i.description) ILIKE '%' || $2 || '%')
+         AND ($2 = '' OR concat_ws(' ', i.id::text, 'INQ-ID-' || lpad(i.display_number::text, greatest(3, length(i.display_number::text)), '0'), i.customer_name, i.status, i.contact, i.subject, i.description) ILIKE '%' || $2 || '%')
        ORDER BY i.updated_at DESC, i.id`,
       [status, search.trim()],
     );
@@ -32,17 +33,29 @@ inquiriesRouter.get("/", async (request, response, next) => {
 inquiriesRouter.post("/", async (request, response, next) => {
   const { values, error } = validateInquiry(request.body);
   if (error) return response.status(400).json({ error });
+  let client;
   try {
-    const { rows } = await query(
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const { rows } = await client.query(
       `INSERT INTO inquiries (customer_name, contact, subject, description, created_by)
        VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, customer_name AS "customerName", contact, subject, description, status,
+       RETURNING id, 'INQ-ID-' || lpad(display_number::text, greatest(3, length(display_number::text)), '0') AS "displayId",
+                 customer_name AS "customerName", contact, subject, description, status,
                  created_at AS "createdAt", updated_at AS "updatedAt"`,
       [values.customerName, values.contact, values.subject, values.description, request.user.id],
     );
+    await client.query(
+      "INSERT INTO inquiry_status_history (inquiry_id, from_status, to_status, changed_by) VALUES ($1, NULL, $2, $3)",
+      [rows[0].id, rows[0].status, request.user.id],
+    );
+    await client.query("COMMIT");
     return response.status(201).json({ inquiry: rows[0] });
   } catch (error) {
+    if (client) await client.query("ROLLBACK").catch(() => {});
     return next(error);
+  } finally {
+    client?.release();
   }
 });
 
@@ -50,14 +63,22 @@ inquiriesRouter.get("/:id", async (request, response, next) => {
   if (!isValidInquiryId(request.params.id)) return response.status(400).json({ error: "Inquiry ID must be a valid UUID." });
   try {
     const { rows } = await query(
-      `SELECT i.id, i.customer_name AS "customerName", i.contact, i.subject, i.description,
+      `SELECT i.id, 'INQ-ID-' || lpad(i.display_number::text, greatest(3, length(i.display_number::text)), '0') AS "displayId",
+              i.customer_name AS "customerName", i.contact, i.subject, i.description,
               i.status, i.created_at AS "createdAt", i.updated_at AS "updatedAt",
               u.display_name AS "createdBy"
        FROM inquiries i JOIN staff_users u ON u.id = i.created_by WHERE i.id = $1`,
       [request.params.id],
     );
     if (!rows[0]) return response.status(404).json({ error: "Inquiry was not found." });
-    return response.json({ inquiry: rows[0] });
+    const history = await query(
+      `SELECT h.from_status AS "fromStatus", h.to_status AS "toStatus",
+              h.changed_at AS "changedAt", u.display_name AS "changedBy"
+       FROM inquiry_status_history h LEFT JOIN staff_users u ON u.id = h.changed_by
+       WHERE h.inquiry_id = $1 ORDER BY h.changed_at DESC, h.id DESC`,
+      [request.params.id],
+    );
+    return response.json({ inquiry: { ...rows[0], statusHistory: history.rows } });
   } catch (error) {
     return next(error);
   }
@@ -70,28 +91,60 @@ inquiriesRouter.patch("/:id/status", async (request, response, next) => {
   if (!hasAllowedStatus(status)) return response.status(400).json({ error: "Status must be New, In Progress, or Resolved." });
   if (!isValidExpectedVersion(expectedUpdatedAt)) return response.status(400).json({ error: "expectedUpdatedAt must be a valid timestamp from the inquiry you viewed." });
 
+  let client;
+  let transactionOpen = false;
   try {
-    const currentResult = await query("SELECT status, updated_at AS \"updatedAt\" FROM inquiries WHERE id = $1", [id]);
+    client = await pool.connect();
+    await client.query("BEGIN");
+    transactionOpen = true;
+
+    const currentResult = await client.query("SELECT status, updated_at AS \"updatedAt\" FROM inquiries WHERE id = $1 FOR UPDATE", [id]);
     const current = currentResult.rows[0];
-    if (!current) return response.status(404).json({ error: "Inquiry was not found." });
+    if (!current) {
+      await client.query("ROLLBACK");
+      transactionOpen = false;
+      return response.status(404).json({ error: "Inquiry was not found." });
+    }
     if (new Date(current.updatedAt).getTime() !== Date.parse(expectedUpdatedAt)) {
+      await client.query("ROLLBACK");
+      transactionOpen = false;
       return response.status(409).json({ error: "This inquiry changed after you opened it. Refresh to see the latest status.", currentStatus: current.status, updatedAt: current.updatedAt });
     }
     if (!canTransitionStatus(current.status, status)) {
+      await client.query("ROLLBACK");
+      transactionOpen = false;
       return response.status(409).json({ error: `Cannot change status from ${current.status} to ${status}.`, currentStatus: current.status });
     }
 
-    const { rows } = await query(
+    const { rows } = await client.query(
       `UPDATE inquiries SET status = $1 WHERE id = $2 AND updated_at = $3
-       RETURNING id, customer_name AS "customerName", contact, subject, description, status,
+       RETURNING id, 'INQ-ID-' || lpad(display_number::text, greatest(3, length(display_number::text)), '0') AS "displayId",
+                 customer_name AS "customerName", contact, subject, description, status,
                  created_at AS "createdAt", updated_at AS "updatedAt"`,
       [status, id, current.updatedAt],
     );
     if (!rows[0]) {
+      await client.query("ROLLBACK");
+      transactionOpen = false;
       return response.status(409).json({ error: "This inquiry changed after you opened it. Refresh to see the latest status." });
     }
-    return response.json({ inquiry: rows[0] });
+
+    const historyResult = await client.query(
+      `INSERT INTO inquiry_status_history (inquiry_id, from_status, to_status, changed_by)
+       VALUES ($1, $2, $3, $4)
+       RETURNING from_status AS "fromStatus", to_status AS "toStatus", changed_at AS "changedAt"`,
+      [id, current.status, status, request.user.id],
+    );
+    await client.query("COMMIT");
+    transactionOpen = false;
+    return response.json({
+      inquiry: rows[0],
+      statusChange: { ...historyResult.rows[0], changedBy: request.user.display_name },
+    });
   } catch (error) {
+    if (client && transactionOpen) await client.query("ROLLBACK").catch(() => {});
     return next(error);
+  } finally {
+    client?.release();
   }
 });

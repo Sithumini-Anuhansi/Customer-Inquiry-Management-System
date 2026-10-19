@@ -43,9 +43,9 @@ authRouter.get("/me", requireAuth, (request, response) => {
 export async function seedStaffAccount() {
   const email = process.env.SEED_STAFF_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_STAFF_PASSWORD;
-  const displayName = process.env.SEED_STAFF_NAME?.trim() || "Coffee Ninja Staff";
+  const displayName = process.env.SEED_STAFF_NAME?.trim() || "InquiTrack Staff";
   if (!email || !password) throw new Error("Set SEED_STAFF_EMAIL and SEED_STAFF_PASSWORD before seeding a staff account.");
-  if (password.length < 12) throw new Error("SEED_STAFF_PASSWORD must be at least 12 characters.");
+  if (password.length < 8) throw new Error("SEED_STAFF_PASSWORD must be at least 8 characters.");
   const passwordHash = await hashPassword(password);
   await query(
     `INSERT INTO staff_users (email, display_name, password_hash) VALUES ($1, $2, $3)

@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
+    "db:seed:inquiries": "node scripts/seed-inquiries.js",
     "test": "node --test"
   },
   "dependencies": { "cookie-parser": "^1.4.7", "cors": "^2.8.5", "dotenv": "^16.4.7", "express": "^4.21.2", "pg": "^8.13.3" }

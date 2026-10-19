@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiRequest, ApiError } from "../lib/api";
 import { formatInquiryDate } from "../lib/format-date";
 import NewInquiryForm from "../components/NewInquiryForm";
@@ -78,10 +78,12 @@ function SignIn({ onSignedIn }) {
 }
 
 function Dashboard({ user, onSignOut }) {
+  const inquiryListRef = useRef(null);
   const [items, setItems] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [hoveredStatus, setHoveredStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -133,14 +135,35 @@ function Dashboard({ user, onSignOut }) {
     window.setTimeout(() => setFlash(""), 4500);
   }
 
+  function selectStatus(nextStatus) {
+    setStatus(nextStatus);
+    window.requestAnimationFrame(() => inquiryListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
   const counts = statuses.map((itemStatus) => ({ label: itemStatus, count: items.filter((item) => item.status === itemStatus).length }));
   const visibleItems = status ? items.filter((item) => item.status === status) : items;
-  const chartMax = Math.max(items.length, 1);
+  const totalCount = items.length;
+  let donutOffset = 0;
+  const donutSegments = counts.map((item) => {
+    const percentage = totalCount ? (item.count / totalCount) * 100 : 0;
+    const segment = { ...item, percentage, offset: donutOffset };
+    donutOffset += percentage;
+    return segment;
+  });
+  const donutColors = { New: "#416fc0", "In Progress": "#d28a19", Resolved: "#16845d" };
+  const statusIcons = {
+    New: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h6l2 2h8v11H4z" /><path d="M4 9h16" /></svg>,
+    "In Progress": <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3.5 2" /></svg>,
+    Resolved: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="m8 12 2.5 2.5L16.5 9" /></svg>,
+  };
   const renderStatusCard = (item) => (
-    <button type="button" key={item.label} aria-pressed={status === item.label} className={`summary-card ${status === item.label ? "summary-card-active" : ""}`} onClick={() => setStatus(status === item.label ? "" : item.label)}>
-      <span className={`status-dot dot-${item.label.toLowerCase().replaceAll(" ", "-")}`} />
+    <button type="button" key={item.label} aria-pressed={status === item.label} className={`summary-card summary-${item.label.toLowerCase().replaceAll(" ", "-")} ${status === item.label ? "summary-card-active" : ""} ${hoveredStatus === item.label ? "summary-card-hovered" : ""}`} onMouseEnter={() => setHoveredStatus(item.label)} onMouseLeave={() => setHoveredStatus("")} onFocus={() => setHoveredStatus(item.label)} onBlur={() => setHoveredStatus("")} onClick={() => selectStatus(item.label)}>
+      <span className="summary-card-top"><span className="summary-icon">{statusIcons[item.label]}</span><span className="summary-hint">{item.label === "New" ? "Needs attention" : item.label === "In Progress" ? "Being handled" : "Completed"}</span></span>
       <span className="summary-label">{item.label}</span>
       <strong>{item.count}</strong>
+      <span className="summary-progress" role="progressbar" aria-label={`${item.label} share of inquiries`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={totalCount ? Math.round((item.count / totalCount) * 100) : 0}>
+        <span className="summary-progress-fill" style={{ width: `${totalCount ? (item.count / totalCount) * 100 : 0}%` }} />
+      </span>
     </button>
   );
 
@@ -171,44 +194,43 @@ function Dashboard({ user, onSignOut }) {
       {flash && <div className="notice notice-success" role="status">{flash}</div>}
       {showForm && <NewInquiryForm onCreated={created} onCancel={() => setShowForm(false)} />}
 
-      <section className="statistics-layout" aria-label="Inquiry statistics">
-        <div className="panel stats-chart" aria-labelledby="status-distribution-title">
-          <div className="stats-chart-heading">
-            <div>
-              <h2 id="status-distribution-title">Status distribution</h2>
-              <p className="muted">Inquiry counts by status{search ? " for this search" : ""}.</p>
-            </div>
-            <span className="stats-chart-total">{items.length} total</span>
-          </div>
-          <div className="distribution-list">
-            {counts.map((item) => {
-              const percentage = Math.round((item.count / chartMax) * 100);
-              const colorClass = `distribution-${item.label.toLowerCase().replaceAll(" ", "-")}`;
-              return (
-                <div className="distribution-row" key={item.label}>
-                  <span className="distribution-label">{item.label}</span>
-                  <div className="distribution-track" role="progressbar" aria-label={`${item.label} inquiries`} aria-valuemin={0} aria-valuemax={chartMax} aria-valuenow={item.count}>
-                    <span className={`distribution-fill ${colorClass}`} style={{ width: `${percentage}%` }} />
-                  </div>
-                  <strong className="distribution-count">{item.count}</strong>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="stats-card-column" aria-label="Inquiry totals and new inquiries">
-          <button type="button" className={`summary-card summary-card-total ${!status ? "summary-card-active" : ""}`} aria-pressed={!status} onClick={() => setStatus("")}>
-            <span className="summary-label">All inquiries</span>
-            <strong>{items.length}</strong>
-          </button>
-          {counts.slice(0, 1).map(renderStatusCard)}
-        </div>
-        <div className="stats-card-column" aria-label="In-progress and resolved inquiries">
-          {counts.slice(1).map(renderStatusCard)}
+      <section className="panel dashboard-metrics" aria-label="Inquiry status summary">
+        <button type="button" className={`summary-card summary-total ${!status ? "summary-card-active" : ""}`} aria-pressed={!status} onClick={() => selectStatus("")}>
+          <span className="summary-card-top"><span className="summary-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h6l2 2h8v11H4z" /><path d="M4 9h16" /></svg></span><span className="summary-hint">Across all statuses</span></span>
+          <span className="summary-total-bottom">
+            <span className="summary-total-copy"><span className="summary-label">Total inquiries</span><strong>{items.length}</strong></span>
+            <svg className="status-donut summary-total-donut" viewBox="0 0 42 42" aria-hidden="true">
+              <circle className="status-donut-track" cx="21" cy="21" r="15.915" pathLength="100" />
+              {totalCount > 0 && donutSegments.map((segment) => (
+                <circle
+                  key={segment.label}
+                  className={`status-donut-segment ${hoveredStatus === segment.label ? "status-donut-segment-active" : ""}`}
+                  cx="21" cy="21" r="15.915" pathLength="100"
+                  stroke={donutColors[segment.label]}
+                  strokeDasharray={`${segment.percentage} ${100 - segment.percentage}`}
+                  strokeDashoffset={-segment.offset}
+                  onMouseEnter={() => setHoveredStatus(segment.label)}
+                  onMouseLeave={() => setHoveredStatus("")}
+                  onClick={(event) => event.stopPropagation()}
+                />
+              ))}
+            </svg>
+          </span>
+        </button>
+        {counts.map(renderStatusCard)}
+        <div className="status-stacked-bar" role="img" aria-label={`Status proportions: ${donutSegments.map((segment) => `${segment.label} ${Math.round(segment.percentage)} percent`).join(", ")}`}>
+          {donutSegments.map((segment) => (
+            <span
+              key={segment.label}
+              className={`status-stacked-segment ${hoveredStatus === segment.label ? "status-stacked-segment-active" : ""}`}
+              style={{ width: `${segment.percentage}%`, backgroundColor: donutColors[segment.label] }}
+              title={`${segment.label}: ${segment.count} (${Math.round(segment.percentage)}%)`}
+            />
+          ))}
         </div>
       </section>
 
-      <section className="panel list-panel" aria-labelledby="all-inquiries-title">
+      <section className="panel list-panel" aria-labelledby="all-inquiries-title" ref={inquiryListRef}>
         <div className="list-heading">
           <div>
             <h2 id="all-inquiries-title">All inquiries</h2>

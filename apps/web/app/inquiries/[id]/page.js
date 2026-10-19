@@ -84,30 +84,48 @@ export default function InquiryDetailPage() {
           {conflict && <div className="notice notice-warning" role="status">{conflict}</div>}
           <section className="detail-heading">
             <div>
-              <p className="eyebrow">INQUIRY DETAILS</p>
               <p className="detail-id-badge"><span>Inquiry ID</span><strong>{inquiry.displayId}</strong></p>
-              <h1>{inquiry.subject}</h1>
-              <div className="detail-meta">
-                <p className="muted">Date of inquiry: <time dateTime={inquiry.createdAt}>{formatInquiryDate(inquiry.createdAt)}</time></p>
-                <span className={`status-pill status-${inquiry.status.toLowerCase().replaceAll(" ", "-")}`}>{inquiry.status}</span>
-              </div>
             </div>
           </section>
           {error && <ErrorMessage>{error}</ErrorMessage>}
           <div className="detail-grid">
             <section className="panel detail-main">
               <p className="eyebrow">CUSTOMER REQUEST DETAILS</p>
-              <h2>{inquiry.customerName}</h2>
+              <h2 className="detail-subject">{inquiry.subject}</h2>
+              <h3 className="detail-customer-name">{inquiry.customerName}</h3>
               <a className="contact-link" href={inquiry.contact.includes("@") ? `mailto:${inquiry.contact}` : undefined}>{inquiry.contact}</a>
+              <div className="detail-meta detail-main-meta">
+                <p className="muted">Date of inquiry: <time dateTime={inquiry.createdAt}>{formatInquiryDate(inquiry.createdAt)}</time></p>
+              </div>
               <div className="detail-divider" />
               <h3>Inquiry description</h3>
               <p className="description-text">{inquiry.description}</p>
+            </section>
+            <section className="panel status-history-panel" aria-labelledby="status-history-title">
+              <p className="eyebrow">ACTIVITY</p>
+              <h2 id="status-history-title">Status history</h2>
+              {inquiry.statusHistory?.length ? (
+                <ol className="status-history-list">
+                  {inquiry.statusHistory.map((change, index) => (
+                    <li key={`${change.changedAt}-${index}`}>
+                      <span className="history-marker" aria-hidden="true" />
+                      <div className="history-entry">
+                        <strong>{change.fromStatus ? `${change.fromStatus} → ${change.toStatus}` : `Inquiry created · ${change.toStatus}`}</strong>
+                        <time dateTime={change.changedAt}>{formatInquiryDate(change.changedAt)}</time>
+                        {change.changedBy && <span>By {change.changedBy}</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="muted history-empty">No status changes have been recorded for this inquiry yet.</p>
+              )}
             </section>
             <aside className="panel detail-aside">
               <p className="eyebrow">WORKFLOW</p>
               <h2>Status and next steps</h2>
               <p className="muted">Use the button below to move this inquiry to its next status.</p>
-              <div className="workflow-current"><span className={`status-dot dot-${inquiry.status.toLowerCase().replaceAll(" ", "-")}`} />Current status <strong>{inquiry.status}</strong></div>
+              <div className="workflow-current"><strong>Current status</strong><span className={`status-pill status-${inquiry.status.toLowerCase().replaceAll(" ", "-")}`}>{inquiry.status}</span></div>
               <button className="button button-primary button-wide" onClick={updateStatus} disabled={saving}>
                 {saving ? "Updating…" : actionLabel}
               </button>
@@ -115,26 +133,6 @@ export default function InquiryDetailPage() {
               <p className="version-note">We check for newer changes before saving so you don’t overwrite someone else’s update.</p>
             </aside>
           </div>
-          <section className="panel status-history-panel" aria-labelledby="status-history-title">
-            <p className="eyebrow">ACTIVITY</p>
-            <h2 id="status-history-title">Status history</h2>
-            {inquiry.statusHistory?.length ? (
-              <ol className="status-history-list">
-                {inquiry.statusHistory.map((change, index) => (
-                  <li key={`${change.changedAt}-${index}`}>
-                    <span className="history-marker" aria-hidden="true" />
-                    <div className="history-entry">
-                      <strong>{change.fromStatus ? `${change.fromStatus} → ${change.toStatus}` : `Inquiry created · ${change.toStatus}`}</strong>
-                      <time dateTime={change.changedAt}>{formatInquiryDate(change.changedAt)}</time>
-                      {change.changedBy && <span>By {change.changedBy}</span>}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="muted history-empty">No status changes have been recorded for this inquiry yet.</p>
-            )}
-          </section>
         </>
       ) : null}
     </main>

@@ -78,13 +78,29 @@ The current tests are focused unit/component tests. Gaps include authenticated H
 
 ## Application screenshots
 
-Place application screenshots in `docs/screenshots/` and embed them here when available. Suggested captures:
+Screenshots are stored in `docs/screenshots/` and embedded below. Select an image to open it at full size.
 
-- `overview.png` — signed-in dashboard with inquiry statistics and seeded records.
-- `inquiry-details.png` — an inquiry ID, details, current status, and status history.
-- `create-inquiry.png` — the completed new-inquiry form or the newly created record in the overview.
+### Dashboard overview
 
-No application evidence screenshots are included in this repository yet.
+[![InquiTrack dashboard overview](docs/screenshots/overview.jpeg)](docs/screenshots/overview.jpeg)
+
+### Inquiry details and status history
+
+[![Inquiry details and status history](docs/screenshots/inquiry-details.png)](docs/screenshots/inquiry-details.png)
+
+### New inquiry form
+
+[![New inquiry form](docs/screenshots/create-inquiry.png)](docs/screenshots/create-inquiry.png)
+
+### Sign-in page and branding
+
+[![InquiTrack sign-in page](docs/screenshots/sign-in.png)](docs/screenshots/sign-in.png)
+
+![InquiTrack logo](docs/screenshots/InquiTrack.png)
+
+### Application workflow
+
+[![InquiTrack workflow](docs/screenshots/workflow.png)](docs/screenshots/workflow.png)
 
 ## Demo video
 
@@ -94,14 +110,29 @@ Suggested local file: `docs/demo/inquitrack-demo.mp4`. If the video is hosted el
 
 ## Test screenshots
 
-Place test evidence in `docs/test-evidence/`. Useful captures include:
+Test and setup evidence is stored in `docs/test-evidence/`. The API request capture below shows a connection failure because the API was not running; it is not evidence of a `401 Unauthorized` response. Start the application before capturing an unauthenticated API response.
 
-- `automated-tests.png` — terminal output after `npm test` completes successfully.
-- `api-unauthenticated.png` — the `401 Unauthorized` response from `curl.exe -i http://localhost:4000/api/inquiries` when signed out.
-- `validation-feedback.png` — the application displaying the server validation error while preserving the form values.
-- `stale-update.png` — the conflict feedback after one browser tab changes an inquiry while another tab still has the older version.
+### Automated test suites
 
-Screenshots supplement the test suites; they do not replace running the test commands above. No test evidence screenshots are included yet.
+[![Successful npm test output](docs/test-evidence/automated-tests.png)](docs/test-evidence/automated-tests.png)
+
+### Database setup
+
+![Docker Desktop with the project database container](docs/test-evidence/docker-desktop.png)
+
+![Database container started with Docker Compose](docs/test-evidence/database-container-running.png)
+
+### Application feedback captures
+
+![Dashboard API connection error](docs/test-evidence/dashboard-api-error.png)
+
+![Inquiry form validation feedback](docs/test-evidence/inquiry-form-validation.png)
+
+![Sign-in required field validation](docs/test-evidence/sign-in-validation.png)
+
+![API connection failure while the service was unavailable](docs/test-evidence/api-unavailable.png)
+
+Screenshots supplement the test suites; they do not replace running the test commands above. Capture the API authentication response, server validation feedback, and stale-update conflict after starting the API and database if additional evidence is needed.
 
 ## API overview
 

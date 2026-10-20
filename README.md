@@ -212,7 +212,21 @@ Test and setup evidence is stored in `docs/test-evidence/`. The API request capt
 
 ![Database container started with Docker Compose](docs/test-evidence/database-container-running.png)
 
-### Application feedback captures
+### Error and conflict handling
+
+![Stale update conflict shown in one tab after another tab changes the inquiry](docs/test-evidence/stale-update-conflict.png)
+
+![Signed-out user opening a direct inquiry link and receiving an unauthenticated response](docs/test-evidence/signed-out-direct-link.jpeg)
+
+### API access and validation
+
+![Unauthenticated API request rejected with 401 Unauthorized](docs/test-evidence/api-unauthenticated.png)
+
+![API rejects an invalid inquiry payload with 400 Bad Request](docs/test-evidence/server-validation.png)
+
+![API distinguishes malformed inquiry IDs from missing records](docs/test-evidence/invalid-id-and-not-found.png)
+
+### Other application feedback captures
 
 ![Dashboard API connection error](docs/test-evidence/dashboard-api-error.png)
 
@@ -222,7 +236,7 @@ Test and setup evidence is stored in `docs/test-evidence/`. The API request capt
 
 ![API connection failure while the service was unavailable](docs/test-evidence/api-unavailable.png)
 
-Screenshots supplement the test suites; they do not replace running the test commands above. Capture the API authentication response, server validation feedback, and stale-update conflict after starting the API and database if additional evidence is needed.
+Screenshots supplement the test suites; they do not replace running the test commands above. The API-unavailable screenshot shows a connection failure, not an authentication response. The API access and validation captures above show the `401`, server-side `400`, malformed-ID `400`, and missing-record `404` responses.
 
 ---
 

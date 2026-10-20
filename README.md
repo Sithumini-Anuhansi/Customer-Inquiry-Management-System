@@ -8,7 +8,7 @@ Built with **Next.js, React, Node.js, Express, and PostgreSQL**, the system feat
 
 ## 📺 Demo video
 
-[Watch the InquiTrack end-to-end walkthrough](docs/demo/inquitrack-demo.mp4)
+[Watch the InquiTrack end-to-end walkthrough on Google Drive](https://drive.google.com/file/d/1rzNm-td6yNowleZMC2ReLh7_s9ItMlte/view?usp=drive_link)
 
 The walkthrough covers staff sign-in, the overview, creating and finding an inquiry, reviewing details and status history, changing status, and validation or stale-update feedback. It also explains API-side authentication/validation and the client–server design. The recording does not show `.env` contents.
 

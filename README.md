@@ -188,6 +188,8 @@ Screenshots are stored in `docs/screenshots/` and embedded below. Select an imag
 
 [![InquiTrack sign-in page](docs/screenshots/sign-in.png)](docs/screenshots/sign-in.png)
 
+The sign-in screen uses the InquiTrack branding and provides the entry point for staff access.
+
 ---
 
 ## 📁 Test screenshots
@@ -198,43 +200,71 @@ Test and setup evidence is stored in `docs/test-evidence/`. The API request capt
 
 [![Unit and component test output](docs/test-evidence/unit-component-tests.png)](docs/test-evidence/unit-component-tests.png)
 
+Shows the API rule tests and web component test completing successfully.
+
 ### API integration tests
 
 [![API integration test output](docs/test-evidence/api-integration-tests.png)](docs/test-evidence/api-integration-tests.png)
+
+Shows the authenticated API and database integration tests passing against the isolated test database.
 
 ### Browser end-to-end tests
 
 [![Playwright browser test output](docs/test-evidence/browser-e2e-tests.png)](docs/test-evidence/browser-e2e-tests.png)
 
+Shows the browser workflow tests completing, including inquiry creation and status updates.
+
 ### Database setup
 
 ![Docker Desktop with the project database container](docs/test-evidence/docker-desktop.png)
 
+Docker Desktop shows the PostgreSQL container used by the application running.
+
 ![Database container started with Docker Compose](docs/test-evidence/database-container-running.png)
+
+The terminal confirms that `docker compose up -d db` started the database service.
 
 ### Error and conflict handling
 
 ![Stale update conflict shown in one tab after another tab changes the inquiry](docs/test-evidence/stale-update-conflict.png)
 
+The two tabs show the same inquiry. After one tab changes its status, the other reports that its copy is stale and asks the user to refresh before updating.
+
 ![Signed-out user opening a direct inquiry link and receiving an unauthenticated response](docs/test-evidence/signed-out-direct-link.jpeg)
+
+An inquiry detail URL opened in a signed-out browser is rejected; the Network panel shows the authentication request returning `401 Unauthorized`.
 
 ### API access and validation
 
 ![Unauthenticated API request rejected with 401 Unauthorized](docs/test-evidence/api-unauthenticated.png)
 
+The API returns `401 Unauthorized` when `/api/inquiries` is requested without a signed-in session.
+
 ![API rejects an invalid inquiry payload with 400 Bad Request](docs/test-evidence/server-validation.png)
 
+The API independently rejects a create request missing the required customer name and returns a clear `400 Bad Request` message.
+
 ![API distinguishes malformed inquiry IDs from missing records](docs/test-evidence/invalid-id-and-not-found.png)
+
+The API responds with `400` for a malformed ID and `404` for a validly shaped UUID that does not identify an existing inquiry.
 
 ### Other application feedback captures
 
 ![Dashboard API connection error](docs/test-evidence/dashboard-api-error.png)
 
+The dashboard shows a recoverable message when it cannot connect to the API.
+
 ![Inquiry form validation feedback](docs/test-evidence/inquiry-form-validation.png)
+
+The inquiry form displays validation feedback while keeping entered values available for correction.
 
 ![Sign-in required field validation](docs/test-evidence/sign-in-validation.png)
 
+The sign-in form identifies required fields when the user submits incomplete credentials.
+
 ![API connection failure while the service was unavailable](docs/test-evidence/api-unavailable.png)
+
+This capture records a connection failure while the API service was unavailable; it is distinct from the authentication and validation responses documented above.
 
 Screenshots supplement the test suites; they do not replace running the test commands above. The API-unavailable screenshot shows a connection failure, not an authentication response. The API access and validation captures above show the `401`, server-side `400`, malformed-ID `400`, and missing-record `404` responses.
 

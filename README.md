@@ -1,5 +1,11 @@
 # InquiTrack — Customer Inquiry Management System
 
+![InquiTrack logo](docs/screenshots/InquiTrack.png)
+
+> **InquiTrack** is a full-stack web application for managing customer inquiries. Staff can securely sign in, create and search inquiries, and track them through `New`, `In Progress`, and `Resolved` statuses.
+
+Built with **Next.js, React, Node.js, Express, and PostgreSQL**, the system includes server-side validation, persistent storage, error handling, and version-based conflict detection.
+
 InquiTrack is a small full-stack workspace for staff to sign in, record customer inquiries, find them later, and move them through a clear status lifecycle. It was built for the supplied Fullstack Development Technical Assessment, which evaluates the complete workflow across the frontend, API, and PostgreSQL database.
 
 ## Assessment workflow
@@ -17,6 +23,10 @@ InquiTrack is a small full-stack workspace for staff to sign in, record customer
 - Backend: Node.js and Express in `apps/api`
 - Database: PostgreSQL 16, started with Docker Compose
 - Architecture: client–server, with a separate frontend and backend workspace in one repository. The API owns authentication, validation, workflow rules, and database access. This keeps the assessment-sized workflow understandable without the operational overhead of microservices.
+
+Technology badges for the main application stack:
+
+![Next.js](https://img.shields.io/badge/next.js-%23000000.svg?style=for-the-badge&logo=next.js&logoColor=white) ![React](https://img.shields.io/badge/react.js-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) ![Node.js](https://img.shields.io/badge/node.js-%2343853D.svg?style=for-the-badge&logo=node.js&logoColor=white) ![Express](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%23f5f2f0) ![PostgreSQL](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 ## Prerequisites
 
@@ -45,7 +55,7 @@ The seeded inquiry script creates or refreshes four examples with different inqu
 
 ## Tests and build
 
-Run both test suites from the repository root:
+Run the fast unit and component suites from the repository root:
 
 ```sh
 npm test
@@ -74,7 +84,56 @@ Build the frontend for production:
 npm run build
 ```
 
-The current tests are focused unit/component tests. Gaps include authenticated HTTP/database integration tests, session expiry tests, and full browser automation; those should be added next.
+### API and PostgreSQL integration tests
+
+These tests start the Express app on an ephemeral local port and exercise real HTTP requests against a disposable PostgreSQL database. They create and drop a unique schema for the run. Do not point `TEST_DATABASE_URL` at a production database. Start the local database and create the test database once:
+
+```sh
+docker compose up -d db
+docker compose exec db psql -U inquiry_app -d postgres -c "CREATE DATABASE inquiry_test;"
+```
+
+In PowerShell, set the test connection string and run the integration suite:
+
+```powershell
+$env:TEST_DATABASE_URL = "postgres://inquiry_app:inquiry_local@localhost:5433/inquiry_test"
+npm run test:integration
+```
+
+In Command Prompt, use:
+
+```bat
+set TEST_DATABASE_URL=postgres://inquiry_app:inquiry_local@localhost:5433/inquiry_test
+npm run test:integration
+```
+
+The integration suite checks unauthenticated access, failed and successful sign-in, HTTP-only session cookie settings, inquiry creation and persistence, search and details, status history, stale-version conflicts, expired sessions, and logout.
+
+### Browser end-to-end tests
+
+Install Playwright's Chromium browser once:
+
+```sh
+npm exec --workspace=@inquiry/web -- playwright install chromium
+```
+
+Start the database, apply migrations, and seed the staff account:
+
+```sh
+docker compose up -d db
+npm run db:migrate
+npm run db:seed
+```
+
+Run the browser suite:
+
+```sh
+npm run test:e2e
+```
+
+Playwright starts an isolated web server on port `3100` and API server on port `4001`, then automates sign-in, inquiry creation and search, status changes, sign-out, and a stale-update conflict between two tabs. The API reads `DATABASE_URL` from `.env`. The browser tests use `E2E_STAFF_EMAIL` and `E2E_STAFF_PASSWORD` when set; otherwise they use the local demo account from `.env.example`. The tests create inquiries in the configured development database, so their uniquely named records remain visible afterward. Failure screenshots and traces are saved by Playwright in `apps/web/test-results/`.
+
+The repository now has unit/component coverage, API/PostgreSQL integration coverage (including session expiry), and browser workflow coverage. The suites are separate because the latter two require running services and browser setup.
 
 ## Application screenshots
 
@@ -114,7 +173,15 @@ Test and setup evidence is stored in `docs/test-evidence/`. The API request capt
 
 ### Automated test suites
 
-[![Successful npm test output](docs/test-evidence/automated-tests.png)](docs/test-evidence/automated-tests.png)
+[![Unit and component test output](docs/test-evidence/unit-component-tests.png)](docs/test-evidence/unit-component-tests.png)
+
+### API integration tests
+
+[![API integration test output](docs/test-evidence/api-integration-tests.png)](docs/test-evidence/api-integration-tests.png)
+
+### Browser end-to-end tests
+
+[![Playwright browser test output](docs/test-evidence/browser-e2e-tests.png)](docs/test-evidence/browser-e2e-tests.png)
 
 ### Database setup
 

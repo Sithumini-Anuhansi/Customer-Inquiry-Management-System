@@ -10,7 +10,9 @@
     "db:seed": "npm run db:seed --workspace=@inquiry/api",
     "db:seed:inquiries": "npm run db:seed:inquiries --workspace=@inquiry/api",
     "build": "npm run build --workspace=@inquiry/web",
-    "test": "npm run test --workspace=@inquiry/api && npm run test --workspace=@inquiry/web"
+    "test": "npm run test --workspace=@inquiry/api && npm run test --workspace=@inquiry/web",
+    "test:integration": "npm run test:integration --workspace=@inquiry/api",
+    "test:e2e": "npm run test:e2e --workspace=@inquiry/web"
   },
   "overrides": {
     "postcss": "^8.5.23"

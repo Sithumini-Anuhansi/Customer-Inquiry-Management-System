@@ -12,6 +12,8 @@ Built with **Next.js, React, Node.js, Express, and PostgreSQL**, the system feat
 
 The walkthrough covers staff sign-in, the overview, creating and finding an inquiry, reviewing details and status history, changing status, and validation or stale-update feedback. It also explains API-side authentication/validation and the client–server design. The recording does not show `.env` contents.
 
+The video is 3 minutes and 9 seconds long.
+
 ## ⚙️ System workflow
 
 ![System Workflow](docs/screenshots/workflow.png)
@@ -131,8 +133,27 @@ Start the database, apply migrations, and seed the staff account:
 
 ```sh
 docker compose up -d db
+docker compose exec db psql -U inquiry_app -d postgres -c "CREATE DATABASE inquiry_e2e;"
+```
+
+Create `inquiry_e2e` once. If it already exists, skip the `CREATE DATABASE` command.
+
+Prepare the dedicated E2E database. In PowerShell:
+
+```powershell
+$env:DATABASE_URL = "postgres://inquiry_app:inquiry_local@localhost:5433/inquiry_e2e"
 npm run db:migrate
 npm run db:seed
+Remove-Item Env:DATABASE_URL
+```
+
+In Command Prompt:
+
+```bat
+set DATABASE_URL=postgres://inquiry_app:inquiry_local@localhost:5433/inquiry_e2e
+npm run db:migrate
+npm run db:seed
+set DATABASE_URL=
 ```
 
 Run the browser suite:
@@ -141,7 +162,7 @@ Run the browser suite:
 npm run test:e2e
 ```
 
-Playwright starts an isolated web server on port `3100` and API server on port `4001`. It automates sign-in, inquiry creation and search, status changes, sign-out, and a stale-update conflict between two tabs. It uses `E2E_STAFF_EMAIL` and `E2E_STAFF_PASSWORD` when set; otherwise it uses the local demo account from `.env.example`. The tests add uniquely named inquiries to the configured development database. Failure screenshots and traces are saved in `apps/web/test-results/`.
+Playwright starts an isolated web server on port `3100` and API server on port `4001`. Its API uses `inquiry_e2e`, separate from the development database, so test inquiries do not appear in the dashboard at `localhost:3000`. If needed, set `E2E_DATABASE_URL` to another dedicated database URL before running the suite; do not point it at the development or integration-test database. The suite automates sign-in, inquiry creation and search, status changes, sign-out, and a stale-update conflict between two tabs. It uses `E2E_STAFF_EMAIL` and `E2E_STAFF_PASSWORD` when set; otherwise it uses the local demo account from `.env.example`. Test inquiries remain in the E2E database between runs. Failure screenshots and traces are saved in `apps/web/test-results/`.
 
 The repository includes unit/component, API/PostgreSQL integration (including session expiry), and browser workflow coverage. The integration and browser suites are separate because they require running services and browser setup.
 

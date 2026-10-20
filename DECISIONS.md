@@ -20,7 +20,9 @@ The detail view submits the `updated_at` value the user last saw. If a second br
 
 ## Testing and next improvement
 
-The current focused tests cover backend input/ID/status rules and a frontend validation-feedback interaction. They do not yet cover authenticated HTTP/database integration, session expiry, or an automated full browser journey. My next improvement would be an integration test against a disposable PostgreSQL database covering login, protected inquiry access, creation, and a stale update.
+The test coverage includes backend unit tests for inquiry validation, ID validation, and status transitions; a frontend test for server validation feedback; API/PostgreSQL integration tests for authentication, protected access, persistence, status history, stale-version conflicts, session expiry, and logout; and Playwright browser tests for the staff workflow and a stale update across two tabs. Integration tests create and remove a unique schema in a disposable test database. Browser tests use a separate `inquiry_e2e` database so generated test inquiries do not mix with development data.
+
+The browser suite does not yet automate every loading, empty, and validation state, or a signed-out user opening a direct inquiry URL. These are useful next tests. The access policy is intentionally that every authenticated staff member can view and update every inquiry, so record ownership does not restrict direct links.
 
 ## AI assistance
 
